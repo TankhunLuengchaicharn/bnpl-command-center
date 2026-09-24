@@ -1,0 +1,21 @@
+CustomerID,FullName,MonthlyIncome,CreditScore,DSR_Pct,EligibilityOutcome,Segment
+101,Somchai Jaidee,45000.00,715,32.50,Eligible,Stacked - at risk
+102,Suda Panyawong,38000.00,680,41.00,Eligible,Stacked - at risk
+103,Anan Chaiyaporn,32000.00,702,38.20,Eligible,Stacked - at risk
+104,Nittaya Wongsawat,52000.00,690,44.80,Eligible,Stacked - at risk
+105,Kittipong Srisuk,60000.00,,,Not Screened,Stacked - healthy
+106,Wanida Boonmee,41000.00,,,Not Screened,Stacked - healthy
+107,Prasert Rattanakul,75000.00,,,Not Screened,Stacked - healthy
+108,Malee Thongdee,33000.00,,,Not Screened,Stacked - healthy
+109,Chatchai Kiatkamon,29000.00,,,Not Screened,Single provider
+110,Pornthip Suksawat,47000.00,,,Not Screened,Single provider
+111,Wichai Amnuayporn,36000.00,,,Not Screened,Single provider
+112,Siriporn Nakornthap,27000.00,,,Not Screened,Single provider
+113,Boonsong Meechai,18000.00,560,61.00,Not Eligible,Stacked - at risk
+114,Amporn Silpachai,21000.00,545,58.00,Not Eligible,Stacked - at risk
+115,Somsak Pattaraporn,19500.00,572,55.50,Not Eligible,Stacked - at risk
+116,Kanya Ruangrit,22000.00,530,63.00,Not Eligible,Stacked - at risk
+117,Direk Wattanasin,55000.00,,,Not Screened,Not a BNPL user
+118,Ratana Chotisiri,48000.00,,,Not Screened,Not a BNPL user
+119,Sombat Uthairat,62000.00,,,Not Screened,Not a BNPL user
+120,Wassana Intharaphan,44000.00,,,Not Screened,Not a BNPL user

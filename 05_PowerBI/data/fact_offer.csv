@@ -1,0 +1,5 @@
+OfferID,CustomerID,OfferDateKey,TotalAmount,OfferedRatePct,MonthlyPayment,Status
+1,101,2026-05-23,2000.00,15.00,180.00,Accepted
+2,102,2026-05-27,4400.00,15.00,385.00,Accepted
+3,103,2026-05-20,1730.00,14.00,149.00,Declined
+4,104,2026-05-30,3335.00,15.00,291.00,Accepted

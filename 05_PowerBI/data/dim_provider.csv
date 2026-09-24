@@ -1,0 +1,6 @@
+ProviderID,ProviderName,TypicalLateRatePct,ReportsToCreditBureau
+1,Shopee SPayLater,25.00,TRUE
+2,Atome,20.00,FALSE
+3,LazPayLater,18.00,FALSE
+4,TrueMoney Next,15.00,FALSE
+5,Grab PayLater,20.00,FALSE
