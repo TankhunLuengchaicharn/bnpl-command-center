@@ -335,14 +335,27 @@ SELECT 'Stage 5: Accepted Consolidation Offer', n, ROUND(100.0 * n / (SELECT n F
 -- ============================================================================
 
 -- Q12. Business question: "What is our current Monthly Recurring Revenue
--- (MRR) from Auto-Pay subscriptions, plus estimated monthly interest
--- revenue from accepted consolidation offers?"
+-- (MRR) from B2B bank licensing, plus estimated monthly interest revenue
+-- from accepted consolidation offers?"
+-- NOTE (business-model pivot, locked 2026-09-16): the consumer app is
+-- 100% free with zero exceptions — there is no consumer subscription fee
+-- anywhere in the product. B2B licensing to partner banks (b2b_license) is
+-- the only recurring revenue line; consolidation-loan interest is a
+-- second, separate revenue line (a lending product, not a subscription
+-- fee, so it was NOT affected by the pivot that closed the consumer tier).
 -- Technique: two aggregates combined with UNION ALL, plus a grand total
--- using ROLLUP-style manual total row (simple, portfolio-readable version)
-WITH mrr AS (
-    SELECT SUM(monthly_fee) AS amount
-    FROM subscription
-    WHERE plan_type = 'AutoPay' AND status = 'Active'
+-- using ROLLUP-style manual total row (simple, portfolio-readable version).
+-- Also demonstrates a real MRR convention: the one-time setup fee is
+-- reported separately and deliberately excluded from the MRR figure.
+WITH b2b_mrr AS (
+    SELECT SUM(monthly_license_fee_baht) AS amount
+    FROM b2b_license
+    WHERE status = 'Active'
+),
+b2b_setup_fees_billed AS (
+    -- one-time revenue, NOT recurring — shown for context, excluded from MRR
+    SELECT SUM(setup_fee_baht) AS amount
+    FROM b2b_license
 ),
 consolidation_monthly_revenue AS (
     -- simplified estimate: (rate% / 12) * outstanding principal, for
@@ -351,11 +364,13 @@ consolidation_monthly_revenue AS (
     FROM consolidation_offer
     WHERE status = 'Accepted'
 )
-SELECT 'Auto-Pay subscription MRR' AS revenue_line, ROUND(amount, 2) AS monthly_baht FROM mrr
+SELECT 'B2B licensing MRR (recurring)' AS revenue_line, ROUND(amount, 2) AS monthly_baht FROM b2b_mrr
 UNION ALL
 SELECT 'Consolidation loan interest (monthly, est.)', ROUND(amount, 2) FROM consolidation_monthly_revenue
 UNION ALL
-SELECT 'TOTAL', ROUND((SELECT amount FROM mrr) + (SELECT amount FROM consolidation_monthly_revenue), 2);
+SELECT 'TOTAL MRR', ROUND((SELECT amount FROM b2b_mrr) + (SELECT amount FROM consolidation_monthly_revenue), 2)
+UNION ALL
+SELECT 'B2B setup fees billed to date (one-time, memo only — not MRR)', ROUND(amount, 2) FROM b2b_setup_fees_billed;
 
 
 -- ============================================================================

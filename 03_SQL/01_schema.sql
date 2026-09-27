@@ -39,6 +39,7 @@ DROP TABLE IF EXISTS bnpl_provider CASCADE;
 DROP TABLE IF EXISTS account CASCADE;
 DROP TABLE IF EXISTS customer CASCADE;
 DROP TABLE IF EXISTS rule_config CASCADE;
+DROP TABLE IF EXISTS b2b_license CASCADE;
 DROP TABLE IF EXISTS bank_profile CASCADE;
 
 -- ----------------------------------------------------------------------------
@@ -51,13 +52,38 @@ CREATE TABLE bank_profile (
     bank_id         SERIAL PRIMARY KEY,
     bank_name       VARCHAR(100) NOT NULL,
     country         VARCHAR(50)  NOT NULL DEFAULT 'Thailand',
+    bank_size_tier  VARCHAR(10)  NOT NULL CHECK (bank_size_tier IN ('Small','Medium','Large')),
     onboarded_date  DATE         NOT NULL DEFAULT CURRENT_DATE
 );
 
-COMMENT ON TABLE bank_profile IS 'One row per client bank. Everything else in the schema is scoped (directly or indirectly) to a bank_id, so the same database can serve multiple banks.';
+COMMENT ON TABLE bank_profile IS 'One row per client bank. Everything else in the schema is scoped (directly or indirectly) to a bank_id, so the same database can serve multiple banks. bank_size_tier drives the B2B licensing price tier in b2b_license (Business Model Decision #4).';
 
 -- ----------------------------------------------------------------------------
--- 2. RULE_CONFIG
+-- 2. B2B_LICENSE
+-- The ONLY revenue line in the product, per the locked business-model pivot
+-- (2026-09-16): the consumer app (Dashboard + Auto-Pay) is 100% free with
+-- zero exceptions — B2B licensing to partner banks is where all revenue
+-- comes from. Structure: one-time setup/integration fee + a recurring
+-- monthly license fee, both tiered by the licensing bank's size
+-- (bank_profile.bank_size_tier). tier_at_signing is snapshotted rather than
+-- read live from bank_profile, because a bank's size can change after
+-- signing but the contracted price should not silently move with it.
+-- ----------------------------------------------------------------------------
+CREATE TABLE b2b_license (
+    license_id               SERIAL PRIMARY KEY,
+    bank_id                   INTEGER NOT NULL REFERENCES bank_profile(bank_id),
+    tier_at_signing           VARCHAR(10) NOT NULL CHECK (tier_at_signing IN ('Small','Medium','Large')),
+    setup_fee_baht            NUMERIC(14,2) NOT NULL CHECK (setup_fee_baht >= 0),   -- one-time, billed at signing — NOT part of MRR
+    monthly_license_fee_baht  NUMERIC(12,2) NOT NULL CHECK (monthly_license_fee_baht >= 0),  -- recurring — this IS MRR
+    contract_start_date       DATE NOT NULL,
+    contract_end_date         DATE,
+    status                    VARCHAR(10) NOT NULL DEFAULT 'Active' CHECK (status IN ('Active','Cancelled'))
+);
+
+COMMENT ON TABLE b2b_license IS 'One row per bank licensing contract. setup_fee_baht is one-time revenue (billed once, at signing); monthly_license_fee_baht is the recurring revenue that feeds MRR (Q12). Pricing assumptions here are illustrative placeholders for the portfolio project — the Excel revenue model (not yet built) is the source of truth once finalized, and these should be reconciled against it.';
+
+-- ----------------------------------------------------------------------------
+-- 3. RULE_CONFIG
 -- Supports FRD NFR "Configurability" — Business Rules R-01 to R-06 use
 -- configurable numbers (days late, credit score minimum, DSR max). Instead
 -- of hard-coding those numbers in application code, they live here so
@@ -73,7 +99,7 @@ CREATE TABLE rule_config (
 COMMENT ON TABLE rule_config IS 'Key/value store for the configurable thresholds referenced in FRD Business Rules R-02, R-03, R-04.';
 
 -- ----------------------------------------------------------------------------
--- 3. CUSTOMER
+-- 4. CUSTOMER
 -- ----------------------------------------------------------------------------
 CREATE TABLE customer (
     customer_id             SERIAL PRIMARY KEY,
@@ -90,7 +116,7 @@ CREATE TABLE customer (
 COMMENT ON TABLE customer IS 'Basic profile. consent_given/consent_date enforce the PDPA non-functional requirement: the system must never read transactions without recorded consent.';
 
 -- ----------------------------------------------------------------------------
--- 4. ACCOUNT
+-- 5. ACCOUNT
 -- A customer can link more than one bank account (checking + savings).
 -- ----------------------------------------------------------------------------
 CREATE TABLE account (
@@ -103,7 +129,7 @@ CREATE TABLE account (
 );
 
 -- ----------------------------------------------------------------------------
--- 5. BNPL_PROVIDER
+-- 6. BNPL_PROVIDER
 -- The maintained list referenced in FRD Edge Case "provider not on the
 -- maintained name list" and FR-01 (Transaction Scanning Engine).
 -- ----------------------------------------------------------------------------
@@ -116,7 +142,7 @@ CREATE TABLE bnpl_provider (
 );
 
 -- ----------------------------------------------------------------------------
--- 6. TRANSACTION
+-- 7. TRANSACTION
 -- Raw bank transaction data — this is the input the whole system runs on.
 -- ----------------------------------------------------------------------------
 CREATE TABLE transaction (
@@ -131,7 +157,7 @@ CREATE TABLE transaction (
 CREATE INDEX idx_transaction_account_date ON transaction(account_id, transaction_date);
 
 -- ----------------------------------------------------------------------------
--- 7. DETECTED_OBLIGATION
+-- 8. DETECTED_OBLIGATION
 -- FR-01 output: a transaction that has been matched to a known BNPL provider.
 -- ----------------------------------------------------------------------------
 CREATE TABLE detected_obligation (
@@ -151,7 +177,7 @@ CREATE INDEX idx_obligation_customer_due ON detected_obligation(customer_id, due
 COMMENT ON TABLE detected_obligation IS 'One row per expected BNPL payment cycle. FRD Business Rule R-03 (Stacking Status) counts DISTINCT provider_id in this table within a trailing 90-day window.';
 
 -- ----------------------------------------------------------------------------
--- 8. LATE_PAYMENT_SIGNAL
+-- 9. LATE_PAYMENT_SIGNAL
 -- FR-05 output, produced by Business Rule R-02.
 -- ----------------------------------------------------------------------------
 CREATE TABLE late_payment_signal (
@@ -165,7 +191,7 @@ CREATE TABLE late_payment_signal (
 );
 
 -- ----------------------------------------------------------------------------
--- 9. CREDIT_SCREENING_RESULT
+-- 10. CREDIT_SCREENING_RESULT
 -- FR-06 output, produced by Business Rules R-04 / R-05.
 -- ----------------------------------------------------------------------------
 CREATE TABLE credit_screening_result (
@@ -180,7 +206,7 @@ CREATE TABLE credit_screening_result (
 );
 
 -- ----------------------------------------------------------------------------
--- 10. CONSOLIDATION_OFFER
+-- 11. CONSOLIDATION_OFFER
 -- FR-07 output. Only created when eligibility_outcome = 'Eligible'.
 -- ----------------------------------------------------------------------------
 CREATE TABLE consolidation_offer (
@@ -196,21 +222,25 @@ CREATE TABLE consolidation_offer (
 );
 
 -- ----------------------------------------------------------------------------
--- 11. SUBSCRIPTION
--- FR-08 output — the free-tier / auto-pay premium model (Business Rule R-06).
+-- 12. SUBSCRIPTION
+-- FR-08 output. NOTE: per the locked business-model pivot (2026-09-16),
+-- BOTH plan types are free — Dashboard and Auto-Pay carry no consumer fee
+-- anywhere in the app (Business Rule R-06). plan_type is therefore a
+-- FEATURE-ENGAGEMENT flag only ("has this customer turned Auto-Pay on"),
+-- never a billing tier — there is deliberately no fee/price column here.
+-- All product revenue comes from b2b_license instead.
 -- ----------------------------------------------------------------------------
 CREATE TABLE subscription (
     subscription_id  SERIAL PRIMARY KEY,
     customer_id       INTEGER NOT NULL REFERENCES customer(customer_id),
     plan_type          VARCHAR(15) NOT NULL CHECK (plan_type IN ('Free','AutoPay')),
-    monthly_fee        NUMERIC(6,2) NOT NULL DEFAULT 0,
     start_date         DATE NOT NULL,
     end_date           DATE,
     status              VARCHAR(10) NOT NULL DEFAULT 'Active' CHECK (status IN ('Active','Cancelled'))
 );
 
 -- ----------------------------------------------------------------------------
--- 12. AUTO_PAY_RUN
+-- 13. AUTO_PAY_RUN
 -- One row per monthly auto-pay attempt — needed to model the FRD Edge Case
 -- "Auto-Pay deduction fails (insufficient funds)".
 -- ----------------------------------------------------------------------------

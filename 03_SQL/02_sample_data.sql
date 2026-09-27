@@ -12,8 +12,41 @@
 -- ----------------------------------------------------------------------------
 -- Bank + rule configuration
 -- ----------------------------------------------------------------------------
-INSERT INTO bank_profile (bank_id, bank_name, country, onboarded_date) VALUES
-  (1, 'Kasikornbank (KBank)', 'Thailand', '2026-01-15');
+-- Only KBank (bank_id 1) has actual customers/transactions loaded below —
+-- it's the narrative anchor bank (KBank bought 50%+ of Atome Thailand,
+-- April 2026). The other 3 banks exist purely to make the B2B licensing
+-- revenue model (b2b_license, below) realistic across all 3 size tiers —
+-- a real licensing pipeline covers banks we haven't onboarded customer
+-- data for yet, so it's correct for them to have no customer/transaction
+-- rows in this sample dataset.
+INSERT INTO bank_profile (bank_id, bank_name, country, bank_size_tier, onboarded_date) VALUES
+  (1, 'Kasikornbank (KBank)',              'Thailand', 'Large',  '2026-01-15'),
+  (2, 'Siam Commercial Bank (SCB)',        'Thailand', 'Large',  '2026-04-01'),
+  (3, 'TMBThanachart Bank (ttb)',          'Thailand', 'Medium', '2026-06-15'),
+  (4, 'Land and Houses Bank (LH Bank)',    'Thailand', 'Small',  '2026-08-01'),
+  (5, 'Kiatnakin Phatra Bank (KKP)',       'Thailand', 'Small',  '2026-05-01');
+
+-- ----------------------------------------------------------------------------
+-- B2B licensing contracts — the ONLY revenue line in the product
+-- (Business Model Decision #4/#5, locked 2026-09-16). Pricing is tiered by
+-- bank_size_tier: setup_fee_baht is one-time (billed once, at signing);
+-- monthly_license_fee_baht is recurring and feeds MRR (Q12).
+-- NOTE: these THB figures are illustrative placeholders for this portfolio
+-- project, not sourced pricing — the Excel revenue model (not yet built)
+-- is the eventual source of truth and these should be reconciled against
+-- it once that sensitivity analysis exists.
+-- KKP (bank_id 5) is deliberately CANCELLED here: its one-time setup fee
+-- was already collected and stays in historical revenue, but its recurring
+-- fee must drop out of current MRR — this is what makes the
+-- `WHERE status = 'Active'` filter in Q12 actually matter, instead of
+-- being a no-op over an all-Active sample.
+-- ----------------------------------------------------------------------------
+INSERT INTO b2b_license (bank_id, tier_at_signing, setup_fee_baht, monthly_license_fee_baht, contract_start_date, contract_end_date, status) VALUES
+  (1, 'Large',  5000000.00, 750000.00, '2026-01-15', NULL,         'Active'),
+  (2, 'Large',  5000000.00, 750000.00, '2026-04-01', NULL,         'Active'),
+  (3, 'Medium', 2500000.00, 400000.00, '2026-06-15', NULL,         'Active'),
+  (4, 'Small',  1000000.00, 150000.00, '2026-08-01', NULL,         'Active'),
+  (5, 'Small',  1000000.00, 150000.00, '2026-05-01', '2026-08-15', 'Cancelled');
 
 INSERT INTO rule_config (config_key, config_value, description) VALUES
   ('late_days_threshold',      3,   'Days past due before a Late Payment Signal is raised (FRD Business Rule R-02)'),
@@ -356,21 +389,23 @@ INSERT INTO consolidation_offer (customer_id, screening_id, offer_date, total_am
 
 -- ----------------------------------------------------------------------------
 -- Subscriptions — every customer with linked accounts gets the free tier;
--- a subset also pays for Auto-Pay (THB 29/month, per FRD Screen S4).
+-- a subset has also turned on Auto-Pay. BOTH are free (Business Model
+-- Decision #1/#5, locked 2026-09-16) — plan_type is a feature-engagement
+-- flag only, never a billing tier, hence no fee column on this table.
 -- ----------------------------------------------------------------------------
-INSERT INTO subscription (customer_id, plan_type, monthly_fee, start_date, status)
-SELECT customer_id, 'Free', 0, '2026-01-30', 'Active' FROM customer;
+INSERT INTO subscription (customer_id, plan_type, start_date, status)
+SELECT customer_id, 'Free', '2026-01-30', 'Active' FROM customer;
 
-INSERT INTO subscription (customer_id, plan_type, monthly_fee, start_date, status) VALUES
-(101, 'AutoPay', 29.00, '2026-02-01', 'Active'),
-(102, 'AutoPay', 29.00, '2026-02-01', 'Active'),
-(103, 'AutoPay', 29.00, '2026-02-05', 'Active'),
-(105, 'AutoPay', 29.00, '2026-02-10', 'Active'),
-(106, 'AutoPay', 29.00, '2026-02-15', 'Active'),
-(107, 'AutoPay', 29.00, '2026-02-01', 'Active'),
-(108, 'AutoPay', 29.00, '2026-02-20', 'Active'),
-(109, 'AutoPay', 29.00, '2026-03-01', 'Active'),
-(113, 'AutoPay', 29.00, '2026-02-25', 'Cancelled');
+INSERT INTO subscription (customer_id, plan_type, start_date, status) VALUES
+(101, 'AutoPay', '2026-02-01', 'Active'),
+(102, 'AutoPay', '2026-02-01', 'Active'),
+(103, 'AutoPay', '2026-02-05', 'Active'),
+(105, 'AutoPay', '2026-02-10', 'Active'),
+(106, 'AutoPay', '2026-02-15', 'Active'),
+(107, 'AutoPay', '2026-02-01', 'Active'),
+(108, 'AutoPay', '2026-02-20', 'Active'),
+(109, 'AutoPay', '2026-03-01', 'Active'),
+(113, 'AutoPay', '2026-02-25', 'Cancelled');
 
 -- ----------------------------------------------------------------------------
 -- Auto-pay runs — mostly successful, with one deliberate failure to support
