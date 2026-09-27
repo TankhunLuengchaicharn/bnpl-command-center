@@ -52,11 +52,11 @@ CREATE TABLE bank_profile (
     bank_id         SERIAL PRIMARY KEY,
     bank_name       VARCHAR(100) NOT NULL,
     country         VARCHAR(50)  NOT NULL DEFAULT 'Thailand',
-    bank_size_tier  VARCHAR(10)  NOT NULL CHECK (bank_size_tier IN ('Small','Medium','Large')),
+    licensing_tier  VARCHAR(10)  NOT NULL CHECK (licensing_tier IN ('Tier 1','Tier 2')),
     onboarded_date  DATE         NOT NULL DEFAULT CURRENT_DATE
 );
 
-COMMENT ON TABLE bank_profile IS 'One row per client bank. Everything else in the schema is scoped (directly or indirectly) to a bank_id, so the same database can serve multiple banks. bank_size_tier drives the B2B licensing price tier in b2b_license (Business Model Decision #4).';
+COMMENT ON TABLE bank_profile IS 'One row per client bank. Everything else in the schema is scoped (directly or indirectly) to a bank_id, so the same database can serve multiple banks. licensing_tier drives the B2B licensing price tier in b2b_license (Business Model Decision #4) — Tier 1 = Big-6-by-assets domestic banks, Tier 2 = mid-size domestic banks, matching the 04_Excel Revenue_Model sheet exactly.';
 
 -- ----------------------------------------------------------------------------
 -- 2. B2B_LICENSE
@@ -64,15 +64,20 @@ COMMENT ON TABLE bank_profile IS 'One row per client bank. Everything else in th
 -- (2026-09-16): the consumer app (Dashboard + Auto-Pay) is 100% free with
 -- zero exceptions — B2B licensing to partner banks is where all revenue
 -- comes from. Structure: one-time setup/integration fee + a recurring
--- monthly license fee, both tiered by the licensing bank's size
--- (bank_profile.bank_size_tier). tier_at_signing is snapshotted rather than
--- read live from bank_profile, because a bank's size can change after
+-- monthly license fee, both tiered by the licensing bank's tier
+-- (bank_profile.licensing_tier). tier_at_signing is snapshotted rather than
+-- read live from bank_profile, because a bank's tier can change after
 -- signing but the contracted price should not silently move with it.
+-- Pricing MUST match 04_Excel/BNPL_Command_Center_Analysis_Workbook.xlsx,
+-- sheet Revenue_Model, cells E9-E12 exactly (that sheet is the source of
+-- truth, sourced against real Thai bank total-assets data) — Tier 1 = THB
+-- 2,500,000 setup + THB 180,000/month; Tier 2 = THB 900,000 setup + THB
+-- 70,000/month. If either changes, change both places in the same edit.
 -- ----------------------------------------------------------------------------
 CREATE TABLE b2b_license (
     license_id               SERIAL PRIMARY KEY,
     bank_id                   INTEGER NOT NULL REFERENCES bank_profile(bank_id),
-    tier_at_signing           VARCHAR(10) NOT NULL CHECK (tier_at_signing IN ('Small','Medium','Large')),
+    tier_at_signing           VARCHAR(10) NOT NULL CHECK (tier_at_signing IN ('Tier 1','Tier 2')),
     setup_fee_baht            NUMERIC(14,2) NOT NULL CHECK (setup_fee_baht >= 0),   -- one-time, billed at signing — NOT part of MRR
     monthly_license_fee_baht  NUMERIC(12,2) NOT NULL CHECK (monthly_license_fee_baht >= 0),  -- recurring — this IS MRR
     contract_start_date       DATE NOT NULL,
@@ -80,7 +85,7 @@ CREATE TABLE b2b_license (
     status                    VARCHAR(10) NOT NULL DEFAULT 'Active' CHECK (status IN ('Active','Cancelled'))
 );
 
-COMMENT ON TABLE b2b_license IS 'One row per bank licensing contract. setup_fee_baht is one-time revenue (billed once, at signing); monthly_license_fee_baht is the recurring revenue that feeds MRR (Q12). Pricing assumptions here are illustrative placeholders for the portfolio project — the Excel revenue model (not yet built) is the source of truth once finalized, and these should be reconciled against it.';
+COMMENT ON TABLE b2b_license IS 'One row per bank licensing contract. setup_fee_baht is one-time revenue (billed once, at signing); monthly_license_fee_baht is the recurring revenue that feeds MRR (Q12). Pricing here matches 04_Excel Revenue_Model exactly (Tier 1 = THB 2.5M setup + THB 180k/month; Tier 2 = THB 900k setup + THB 70k/month) — that sheet is the source of truth, keep both in sync.';
 
 -- ----------------------------------------------------------------------------
 -- 3. RULE_CONFIG

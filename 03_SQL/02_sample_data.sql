@@ -14,27 +14,34 @@
 -- ----------------------------------------------------------------------------
 -- Only KBank (bank_id 1) has actual customers/transactions loaded below —
 -- it's the narrative anchor bank (KBank bought 50%+ of Atome Thailand,
--- April 2026). The other 3 banks exist purely to make the B2B licensing
--- revenue model (b2b_license, below) realistic across all 3 size tiers —
--- a real licensing pipeline covers banks we haven't onboarded customer
--- data for yet, so it's correct for them to have no customer/transaction
--- rows in this sample dataset.
-INSERT INTO bank_profile (bank_id, bank_name, country, bank_size_tier, onboarded_date) VALUES
-  (1, 'Kasikornbank (KBank)',              'Thailand', 'Large',  '2026-01-15'),
-  (2, 'Siam Commercial Bank (SCB)',        'Thailand', 'Large',  '2026-04-01'),
-  (3, 'TMBThanachart Bank (ttb)',          'Thailand', 'Medium', '2026-06-15'),
-  (4, 'Land and Houses Bank (LH Bank)',    'Thailand', 'Small',  '2026-08-01'),
-  (5, 'Kiatnakin Phatra Bank (KKP)',       'Thailand', 'Small',  '2026-05-01');
+-- April 2026). The other 4 banks exist purely to make the B2B licensing
+-- revenue model (b2b_license, below) realistic across both tiers — a real
+-- licensing pipeline covers banks we haven't onboarded customer data for
+-- yet, so it's correct for them to have no customer/transaction rows in
+-- this sample dataset.
+-- Tier and bank names here MUST match 04_Excel Revenue_Model exactly:
+-- Tier 1 = "Big 6 by assets" (KBank, SCB, BBL, KTB, Krungsri, TTB);
+-- Tier 2 = mid-size domestic (TISCO, Kiatnakin Phatra, CIMB Thai, LH Bank,
+-- UOB Thai, Standard Chartered Thai, ICBC Thai). Using 3 of the 6 Tier 1
+-- banks and 2 of the 7 Tier 2 banks here is enough sample variety without
+-- needing all 13 loaded.
+INSERT INTO bank_profile (bank_id, bank_name, country, licensing_tier, onboarded_date) VALUES
+  (1, 'Kasikornbank (KBank)',              'Thailand', 'Tier 1', '2026-01-15'),
+  (2, 'Siam Commercial Bank (SCB)',        'Thailand', 'Tier 1', '2026-04-01'),
+  (3, 'TMBThanachart Bank (ttb)',          'Thailand', 'Tier 1', '2026-06-15'),
+  (4, 'Land and Houses Bank (LH Bank)',    'Thailand', 'Tier 2', '2026-08-01'),
+  (5, 'Kiatnakin Phatra Bank (KKP)',       'Thailand', 'Tier 2', '2026-05-01');
 
 -- ----------------------------------------------------------------------------
 -- B2B licensing contracts — the ONLY revenue line in the product
 -- (Business Model Decision #4/#5, locked 2026-09-16). Pricing is tiered by
--- bank_size_tier: setup_fee_baht is one-time (billed once, at signing);
+-- licensing_tier: setup_fee_baht is one-time (billed once, at signing);
 -- monthly_license_fee_baht is recurring and feeds MRR (Q12).
--- NOTE: these THB figures are illustrative placeholders for this portfolio
--- project, not sourced pricing — the Excel revenue model (not yet built)
--- is the eventual source of truth and these should be reconciled against
--- it once that sensitivity analysis exists.
+-- NOTE: these THB figures are NOT independently invented — they are copied
+-- exactly from 04_Excel/BNPL_Command_Center_Analysis_Workbook.xlsx, sheet
+-- Revenue_Model, cells E9-E12 (Tier 1 = THB 2,500,000 setup + THB 180,000/
+-- month; Tier 2 = THB 900,000 setup + THB 70,000/month), so the SQL and
+-- Excel deliverables agree on the same numbers.
 -- KKP (bank_id 5) is deliberately CANCELLED here: its one-time setup fee
 -- was already collected and stays in historical revenue, but its recurring
 -- fee must drop out of current MRR — this is what makes the
@@ -42,11 +49,11 @@ INSERT INTO bank_profile (bank_id, bank_name, country, bank_size_tier, onboarded
 -- being a no-op over an all-Active sample.
 -- ----------------------------------------------------------------------------
 INSERT INTO b2b_license (bank_id, tier_at_signing, setup_fee_baht, monthly_license_fee_baht, contract_start_date, contract_end_date, status) VALUES
-  (1, 'Large',  5000000.00, 750000.00, '2026-01-15', NULL,         'Active'),
-  (2, 'Large',  5000000.00, 750000.00, '2026-04-01', NULL,         'Active'),
-  (3, 'Medium', 2500000.00, 400000.00, '2026-06-15', NULL,         'Active'),
-  (4, 'Small',  1000000.00, 150000.00, '2026-08-01', NULL,         'Active'),
-  (5, 'Small',  1000000.00, 150000.00, '2026-05-01', '2026-08-15', 'Cancelled');
+  (1, 'Tier 1', 2500000.00, 180000.00, '2026-01-15', NULL,         'Active'),
+  (2, 'Tier 1', 2500000.00, 180000.00, '2026-04-01', NULL,         'Active'),
+  (3, 'Tier 1', 2500000.00, 180000.00, '2026-06-15', NULL,         'Active'),
+  (4, 'Tier 2', 900000.00,  70000.00,  '2026-08-01', NULL,         'Active'),
+  (5, 'Tier 2', 900000.00,  70000.00,  '2026-05-01', '2026-08-15', 'Cancelled');
 
 INSERT INTO rule_config (config_key, config_value, description) VALUES
   ('late_days_threshold',      3,   'Days past due before a Late Payment Signal is raised (FRD Business Rule R-02)'),
