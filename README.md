@@ -28,11 +28,13 @@ Match transactions to known BNPL providers (Atome, SPayLater, LazPayLater, TrueM
 Single dashboard: every provider, every due date, one total owed
         │
         ▼
-One bank deduction → auto-split and paid to every provider on time
+Auto-Pay deducts and pays each provider individually, on that provider's own due date — never consolidated into one transfer (no float held on the customer's behalf)
         │
         ▼
 (For customers already falling behind) optional debt consolidation loan —
-   offered only after standard credit checks (credit score, income, DSR ≤ 40–50%)
+   offered only after standard credit checks (credit score, income, a tiered DSR check:
+   full offer at DSR ≤40%, a smaller/shorter limited offer up to DSR 60% with a higher
+   credit-score bar, otherwise not eligible)
    Customers who don't qualify are referred to the Bank of Thailand's
    existing debt-relief program instead of more debt.
 ```
