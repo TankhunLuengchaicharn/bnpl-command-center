@@ -64,7 +64,9 @@ Modeled on **Rocket Money** (US, $1B+ valuation) but adapted for this market: th
 
 ## Key finding
 
-Cross-checked independently across two deliverables: in the sample data, **100% of late fees charged (THB 2,340) come from customers already flagged "Stacked – at risk"** — visible both in the Power BI Customer Segment Drilldown page and in the Excel workbook's Pivot3. Single-provider customers in this dataset never trigger a late fee. This is the core evidence for why cross-provider visibility (not just single-provider risk scoring) is the actual gap worth closing.
+Cross-checked independently across two deliverables: in the sample data, **100% of late fees charged (THB 2,340) occurred among customers stacked across 2+ BNPL providers — none occurred among single-provider customers** — visible both in the Power BI Customer Segment Drilldown page and in the Excel workbook's Pivot3. This is the core evidence for why cross-provider visibility (not just single-provider risk scoring) is the actual gap worth closing.
+
+*Methodology note:* within the stacked population, "Stacked – at risk" vs. "Stacked – healthy" is a rule-based label (a customer is tagged "at risk" precisely because a late-payment signal already exists for them) — not an independent finding, so it isn't cited as separate evidence here. The stacked-vs-single-provider split above is the part of the result that wasn't built into its own definition.
 
 ## Honest limitations
 
