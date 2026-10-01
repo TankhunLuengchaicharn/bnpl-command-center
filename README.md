@@ -61,8 +61,28 @@ Modeled on **Rocket Money** (US, $1B+ valuation) but adapted for this market: th
 | [`02_FRD`](./02_FRD) | Functional Requirements Document — 14 functional requirements, 6 business rules, 6 non-functional requirements, 5 documented edge cases, and 14 annotated wireframe screens (S1–S14) |
 | [`03_SQL`](./03_SQL) | PostgreSQL schema, synthetic sample data, and 16 practice queries — including window functions and a correlated subquery to detect cross-provider debt stacking within a trailing 90-day window |
 | [`04_Excel`](./04_Excel) | Analysis workbook: customer lookup (INDEX/MATCH and XLOOKUP), data-quality QA checks, pivot tables, and the B2B revenue model with sensitivity analysis; plus a bonus Excel formula cheat sheet |
-| [`05_PowerBI`](./05_PowerBI) | Power BI dashboard (`.pbix`) — a 5-table star schema, 9 DAX measures, and a 4-page report (Executive Overview, Provider Analysis, Customer Segment Drilldown, Revenue & Offers). *Screenshots coming soon, since a `.pbix` can't be opened without Power BI Desktop installed.* Also included: a step-by-step [build guide](./05_PowerBI/BNPL_Command_Center_PowerBI_Guide.docx) documenting the full data-model and DAX build process — a documentation/knowledge-transfer sample. |
+| [`05_PowerBI`](./05_PowerBI) | Power BI dashboard (`.pbix`) — a 5-table star schema, 9 DAX measures, and a 4-page report (Executive Overview, Provider Analysis, Customer Segment Drilldown, Revenue & Offers). Screenshots of all 4 pages are below, since a `.pbix` can't be opened without Power BI Desktop installed. Also included: a step-by-step [build guide](./05_PowerBI/BNPL_Command_Center_PowerBI_Guide.docx) documenting the full data-model and DAX build process — a documentation/knowledge-transfer sample. |
 | [`06_UAT_Test_Cases`](./06_UAT_Test_Cases) | 17 user acceptance test cases covering the core detection, auto-pay, and consolidation-offer flows |
+
+## Power BI Dashboard
+
+Screenshots of all 4 report pages — the `.pbix` itself (in [`05_PowerBI`](./05_PowerBI)) needs Power BI Desktop installed to open.
+
+**Executive Overview**
+![Executive Overview](05_PowerBI/screenshots/page1_executive_overview.png)
+Live KPI cards (Stacked Customer Count, Consolidation Candidate Count, Screening Pass Rate %, Offer Acceptance Rate %) next to a funnel from 20 total customers down to 3 accepted consolidation offers, and a late-fees trend climbing March → May as more customers stack providers.
+
+**Provider Analysis**
+![Provider Analysis](05_PowerBI/screenshots/page2_provider_analysis.png)
+Expected vs. actual paid amount by provider, next to each provider's typical late rate and total late fees charged — Shopee SPayLater carries both the highest penalty rate (25%) and by far the highest late fees (THB 1,175) in the sample.
+
+**Customer Segment Drilldown**
+![Customer Segment Drilldown](05_PowerBI/screenshots/page3_customer_segment_drilldown.png)
+Customer-level detail with a Segment slicer (Not a BNPL user / Single provider / Stacked – healthy / Stacked – at risk). This is the page the "Key finding" below is drawn from — every baht of the THB 2,340 in sample late fees traces back to customers stacked across 2+ providers.
+
+**Revenue & Offers**
+![Revenue & Offers](05_PowerBI/screenshots/page4_revenue_offers.png)
+Consolidation-offer economics: estimated monthly interest revenue (THB 12.17K), offer acceptance rate (75%), and individual offers broken out by status and rate.
 
 ## Key finding
 
