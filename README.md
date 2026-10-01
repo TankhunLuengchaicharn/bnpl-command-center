@@ -60,8 +60,8 @@ Modeled on **Rocket Money** (US, $1B+ valuation) but adapted for this market: th
 | [`01_BRD`](./01_BRD) | Business Requirements Document — charter, stakeholder matrix, requirements, user stories, risk register, As-Is → To-Be |
 | [`02_FRD`](./02_FRD) | Functional Requirements Document — 14 functional requirements, 6 business rules, 6 non-functional requirements, 5 documented edge cases, and 14 annotated wireframe screens (S1–S14) |
 | [`03_SQL`](./03_SQL) | PostgreSQL schema, synthetic sample data, and 16 practice queries — including window functions and a correlated subquery to detect cross-provider debt stacking within a trailing 90-day window |
-| [`04_Excel`](./04_Excel) | Analysis workbook: customer lookup (INDEX/MATCH and XLOOKUP), data-quality QA checks, pivot tables, and the B2B revenue model with sensitivity analysis; plus a bonus Excel formula cheat sheet |
-| [`05_PowerBI`](./05_PowerBI) | Power BI dashboard (`.pbix`) — a 5-table star schema, 9 DAX measures, and a 4-page report (Executive Overview, Provider Analysis, Customer Segment Drilldown, Revenue & Offers). Screenshots of all 4 pages are below, since a `.pbix` can't be opened without Power BI Desktop installed. Also included: a step-by-step [build guide](./05_PowerBI/BNPL_Command_Center_PowerBI_Guide.docx) documenting the full data-model and DAX build process — a documentation/knowledge-transfer sample. |
+| [`04_Excel`](./04_Excel) | Analysis workbook: customer lookup (INDEX/MATCH and XLOOKUP), data-quality QA checks, pivot tables, and the B2B revenue model with sensitivity analysis |
+| [`05_PowerBI`](./05_PowerBI) | Power BI dashboard (`.pbix`) — a 5-table star schema, 9 DAX measures, and a 4-page report (Executive Overview, Provider Analysis, Customer Segment Drilldown, Revenue & Offers). Screenshots of all 4 pages are below, since a `.pbix` can't be opened without Power BI Desktop installed. |
 | [`06_UAT_Test_Cases`](./06_UAT_Test_Cases) | 17 user acceptance test cases covering the core detection, auto-pay, and consolidation-offer flows |
 
 ## Power BI Dashboard
